@@ -2,13 +2,13 @@ class Play extends Phaser.Scene {
   constructor() {
     super("playScene");
 
-    //player turn variable
-    this.currentPlayer = 1;
-    this.timer = 0;
-    //this.p2Timer = 0;
-    this.isP1Turn = true;
-    this.showGameOverP1Text = false;
-    this.showPressJToStartP2Text = false;
+
+    this.currentPlayer = 1; //start with player 1
+    this.timer = 0; //set timer to 0
+    this.isP1Turn = true; 
+    this.showGameOverP1Text = false;  //hide game over text
+    this.showPressJToStartP2Text = false; //restart game for p2
+    this.p2Flag = false;  //flag for p2 to then start their turn
   }
 
   init(data) {
@@ -84,7 +84,7 @@ class Play extends Phaser.Scene {
       Phaser.Input.Keyboard.KeyCodes.J
     );
 
-    this.gameOver = false; // Initialize gameOver as false
+    this.gameOver = false; 
 
     // Display timer for both players (initially showing only player 1's timer)
     this.timerP1Text = this.add.text(
@@ -213,9 +213,7 @@ class Play extends Phaser.Scene {
     this.clock = this.time.delayedCall(
       game.settings.gameTimer,
       () => {
-        //this.add.text(game.config.width / 2, game.config.height / 2, 'GAME OVER', scoreConfig).setOrigin(0.5);
-        //this.add.text(game.config.width / 2, game.config.height / 2 + 64, 'Press (J) to start Player 2', scoreConfig).setOrigin(0.5);
-        //this.add.text(game.config.width / 2, game.config.height / 2 + 64, 'Press (R) to Restart or ← for Menu', scoreConfig).setOrigin(0.5);
+
       },
       null,
       this
@@ -244,7 +242,7 @@ class Play extends Phaser.Scene {
     );
   }
 
-  //begininning of update()
+
   update() {
     // Update timers for both players
     this.updateTimer();
@@ -252,7 +250,7 @@ class Play extends Phaser.Scene {
     if (this.gameOver && Phaser.Input.Keyboard.JustDown(this.keyLEFT)) {
         this.scene.start("menuScene")
       }
-    // check key input for restart
+
     if(this.gameOver && Phaser.Input.Keyboard.JustDown(this.keyRESET)) {
         this.scene.restart()
     }
@@ -269,7 +267,6 @@ class Play extends Phaser.Scene {
       this.keyFIRE
     );
 
-    //main logic
 
     if (this.gameOver) {
       if (this.isP1Turn) {
@@ -283,7 +280,6 @@ class Play extends Phaser.Scene {
     }
   }}
 
-  //end of update()
 
   handleCollision(rocket, ship) {
     rocket.reset();
@@ -291,7 +287,7 @@ class Play extends Phaser.Scene {
 
     //adding points per hit
     if (this.currentPlayer === 1) {
-      // Handling collision...
+      // Handling collision
       this.p1Score += ship.points;
       this.scoreLeft.text = this.p1Score;
     } else {
@@ -323,31 +319,29 @@ class Play extends Phaser.Scene {
     // Convert milliseconds to seconds
     let seconds = Math.floor(milliseconds / 1000);
 
-    // Calculate minutes and remaining seconds
+    // Convert seconds to minutes
     let minutes = Math.floor(seconds / 60);
     seconds = seconds % 60;
 
-    // Format the time to have leading zeroes if necessary
     let formattedTime = `${minutes}:${seconds.toString().padStart(2, "0")}`;
 
     return formattedTime;
   }
 
-  //keep player timer up to date
   updateTimer() {
     // Reduce timer based on who's currently playing
     if (this.currentPlayer === 1 && this.timer > 0) {
       this.timer -= 1000 / 60;
       this.timerP1Text.setText("P1 Time: " + this.formatTime(this.timer));
       if (this.timer <= 0) {
-        // Handle end of P1's turn
+
         this.endP1Turn();
       }
     } else if (this.currentPlayer === 2 && this.timer > 0) {
       this.timer -= 1000 / 60;
       this.timerP2Text.setText("P2 Time: " + this.formatTime(this.timer));
       if (this.timer <= 0) {
-        // Handle end of P2's turn
+
         this.endP2Turn();
       }
     }
@@ -365,7 +359,7 @@ class Play extends Phaser.Scene {
     let boom = this.add.sprite(ship.x, ship.y, "explosion").setOrigin(0, 0);
     boom.anims.play("explode"); // play explode animation
     boom.on("animationcomplete", () => {
-      // callback after anim completes
+
       ship.reset(); // reset ship position
       ship.alpha = 1; // make ship visible again
       boom.destroy(); // remove explosion sprite
@@ -378,17 +372,16 @@ class Play extends Phaser.Scene {
   startP1Turn() {
     this.currentPlayer = 1;
     this.isP1Turn = true;
-    //this.rocket.setVisible(true);
+
     this.timerP1Text.setVisible(true);
     this.timer = this.initialTimerValue;
 
-    // Hide P2 elements
-    //this.p2Rocket.setVisible(false);
+    // toggle off p2
     this.timerP2Text.setVisible(false);
   }
 
   endP1Turn() {
-    // Declare and initialize gameOverConfig at the beginning of the method
+
     let gameOverConfig = {
       fontFamily: "Courier",
       fontSize: "28px",
@@ -403,62 +396,57 @@ class Play extends Phaser.Scene {
     };
 
     // Toggle to player 2
+    this.p2Flag = true;
     this.currentPlayer = 2;
-    // Reset player 1s rocket and hide it
-    //this.p1Rocket.setVisible(false);
-    // Show player 2s rocket
-    //this.p2Rocket.setVisible(true);
-    // Swap timers
+
+    //ui update
     this.timerP1Text.setVisible(false);
     this.timerP2Text.setVisible(true);
-    // Reset the timer for player 2
-    this.timer = game.settings.gameTimer;
 
     this.showGameOverP1Text = true;
     this.showPressJToStartP2Text = true;
 
-    // Update visibility based on flags
     this.gameOverP1Text.setVisible(this.showGameOverP1Text);
     this.pressJToStartP2Text.setVisible(this.showPressJToStartP2Text);
 
     // Listen for 'J' key press to start P2's turn
-    this.pressJToStartP2Text.setVisible(true);
     this.keyP2turn.once("down", () => {
+      this.pressJToStartP2Text.setVisible(false);
       this.pressJToStartP2Text.setVisible(false);
       this.startP2Turn();
     });
   }
 
   startP2Turn() {
+
+    if(!this.p2Flag) 
+      return;
+
     this.gameOver = false;
-    this.currentPlayer = 2;
+    this.p2Flag = false;
     this.isP1Turn = false;
+    this.currentPlayer = 2;
 
     this.rocket.setPosition(
       game.config.width / 2,
       game.config.height - borderUISize - borderPadding
     );
-    this.timer = game.settings.gameTimer; // Assuming `data.gameTimer` is the intended initial timer value for both players.
-    this.updateTimer(); // To immediately reflect the timer value on UI.
-    this.timerP2Text.setVisible(true); // Make P2s timer visible
-    //this.p2Rocket.setVisible(true);
 
-    // Hide P1 elements and game over text
-    //this.p1Rocket.setVisible(false);
+
+    //toggle p2
+    this.timer = game.settings.gameTimer; 
+    this.timerP2Text.setVisible(true); 
+
+    //toggle off p1
     this.timerP1Text.setVisible(false);
-
-    this.showGameOverP1Text = false;
-    this.showPressJToStartP2Text = false;
-
-    this.gameOverP1Text.setVisible(this.showGameOverP1Text);
-    this.pressJToStartP2Text.setVisible(this.showPressJToStartP2Text);
+    this.gameOverP1Text.setVisible(false);
+    this.pressJToStartP2Text.setVisible(false);
   }
 
-  //wraps up game
   endP2Turn() {
     this.gameOver = true;
 
-    // Display game over message for P2 and option to restart or return to menu
+    // Display game over message for P2 and option to restart
     let gameOverConfig = {
       fontFamily: "Courier",
       fontSize: "28px",
